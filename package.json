@@ -1,0 +1,30 @@
+{
+  "name": "grocereal-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace=@grocereal/web",
+    "dev:api": "npm run start:dev --workspace=@grocereal/api",
+    "start": "npm run dev:web",
+    "build:shared": "npm run build --workspace=@grocereal/shared",
+    "build:api": "npm run build --workspace=@grocereal/api",
+    "build:web": "npm run build --workspace=@grocereal/web",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:push": "npx prisma db push",
+    "prisma:seed": "npx ts-node prisma/seed.ts",
+    "prisma:studio": "npx prisma studio"
+  },
+  "devDependencies": {
+    "prisma": "^6.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

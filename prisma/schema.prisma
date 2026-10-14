@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  STORE_MANAGER
+  DRIVER
+  ADMIN
+}
+
+enum UnitType {
+  EACH
+  WEIGHT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PICKING
+  READY_FOR_DELIVERY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+  CANCELLED
+}
+
+enum SubstitutionPreference {
+  ALLOW_SUBSTITUTES
+  REFUND_ITEM
+  CONTACT_ME
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  phone        String?
+  role         UserRole  @default(CUSTOMER)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  addresses       Address[]
+  managedStores   Store[]              @relation("StoreManager")
+  customerOrders  Order[]              @relation("CustomerOrders")
+  driverDeliveries Delivery[]          @relation("DriverDeliveries")
+  statusUpdates   OrderStatusHistory[] @relation("UserStatusUpdates")
+
+  @@map("users")
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  userId     String
+  label      String   // e.g. "Home", "Office"
+  street     String
+  city       String
+  postalCode String
+  latitude   Float?
+  longitude  Float?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+model Store {
+  id             String   @id @default(uuid())
+  managerId      String
+  name           String
+  description    String?
+  address        String
+  phone          String?
+  imageUrl       String?
+  isOpen         Boolean  @default(true)
+  isApproved     Boolean  @default(true)
+  minOrderAmount Int      @default(0) // cents (e.g. 1500 = $15.00)
+  deliveryFee    Int      @default(0) // cents (e.g. 399 = $3.99)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  manager       User           @relation("StoreManager", fields: [managerId], references: [id])
+  categories    Category[]
+  products      Product[]
+  deliverySlots DeliverySlot[]
+  orders        Order[]
+
+  @@map("stores")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  storeId   String
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  storeId     String
+  categoryId  String
+  name        String
+  description String?
+  brand       String?
+  sku         String?
+  barcode     String?
+  imageUrl    String?
+  price       Int      // in cents (e.g. 299 = $2.99)
+  unitType    UnitType @default(EACH) // EACH or WEIGHT
+  unitLabel   String   @default("each") // "kg", "g", "bunch", "pack"
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store        Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category     Category    @relation(fields: [categoryId], references: [id])
+  inventory    Inventory?
+  orderItems   OrderItem[] @relation("OrderedProduct")
+  substitutedIn OrderItem[] @relation("SubstitutedProduct")
+
+  @@map("products")
+}
+
+model Inventory {
+  id                 String   @id @default(uuid())
+  productId          String   @unique
+  quantityInStock    Int      // units for EACH, grams for WEIGHT
+  lowStockThreshold  Int      @default(10)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("inventory")
+}
+
+model DeliverySlot {
+  id          String   @id @default(uuid())
+  storeId     String
+  date        DateTime @db.Date
+  startTime   String   // "09:00"
+  endTime     String   // "11:00"
+  capacity    Int      @default(10)
+  bookedCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store  Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("delivery_slots")
+}
+
+model Order {
+  id                     String                 @id @default(uuid())
+  customerId             String
+  storeId                String
+  addressId              String
+  deliverySlotId         String
+  status                 OrderStatus            @default(PENDING)
+  substitutionPreference SubstitutionPreference @default(ALLOW_SUBSTITUTES)
+  customerNotes          String?
+  itemSubtotal           Int                    // in cents
+  deliveryFee            Int                    // in cents
+  total                  Int                    // in cents
+  paymentMethod          PaymentMethod          @default(CASH_ON_DELIVERY)
+  paymentStatus          PaymentStatus          @default(PENDING)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  customer      User                 @relation("CustomerOrders", fields: [customerId], references: [id])
+  store         Store                @relation(fields: [storeId], references: [id])
+  address       Address              @relation(fields: [addressId], references: [id])
+  deliverySlot  DeliverySlot         @relation(fields: [deliverySlotId], references: [id])
+  items         OrderItem[]
+  delivery      Delivery?
+  statusHistory OrderStatusHistory[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                   String   @id @default(uuid())
+  orderId              String
+  productId            String
+  productName          String   // Snapshot
+  unitPrice            Int      // Snapshot in cents
+  unitType             UnitType // Snapshot
+  unitLabel            String   // Snapshot
+  quantityOrdered      Int      // count for EACH, grams for WEIGHT
+  quantityFulfilled    Int      // count for EACH, grams for WEIGHT
+  substitutedProductId String?
+  lineTotal            Int      // Snapshot in cents
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product  @relation("OrderedProduct", fields: [productId], references: [id])
+  substitutedProduct Product? @relation("SubstitutedProduct", fields: [substitutedProductId], references: [id])
+
+  @@map("order_items")
+}
+
+model Delivery {
+  id          String         @id @default(uuid())
+  orderId     String         @unique
+  driverId    String?
+  status      DeliveryStatus @default(PENDING)
+  pickedUpAt  DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driver User? @relation("DriverDeliveries", fields: [driverId], references: [id])
+
+  @@map("deliveries")
+}
+
+model OrderStatusHistory {
+  id              String      @id @default(uuid())
+  orderId         String
+  status          OrderStatus
+  changedByUserId String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+
+  order         Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedByUser User? @relation("UserStatusUpdates", fields: [changedByUserId], references: [id])
+
+  @@map("order_status_history")
+}

@@ -1,0 +1,46 @@
+export enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  STORE_MANAGER = 'STORE_MANAGER',
+  DRIVER = 'DRIVER',
+  ADMIN = 'ADMIN',
+}
+
+export enum UnitType {
+  EACH = 'EACH',
+  WEIGHT = 'WEIGHT',
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PICKING = 'PICKING',
+  READY_FOR_DELIVERY = 'READY_FOR_DELIVERY',
+  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum DeliveryStatus {
+  PENDING = 'PENDING',
+  ASSIGNED = 'ASSIGNED',
+  PICKED_UP = 'PICKED_UP',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum SubstitutionPreference {
+  ALLOW_SUBSTITUTES = 'ALLOW_SUBSTITUTES',
+  REFUND_ITEM = 'REFUND_ITEM',
+  CONTACT_ME = 'CONTACT_ME',
+}
+
+export enum PaymentMethod {
+  CASH_ON_DELIVERY = 'CASH_ON_DELIVERY',
+  ONLINE = 'ONLINE',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+}
