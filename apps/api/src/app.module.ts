@@ -7,6 +7,7 @@ import { StoresModule } from './stores/stores.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { OrdersModule } from './orders/orders.module';
 import { StoreManagementModule } from './store/store-management.module';
+import { DriverModule } from './driver/driver.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StoreManagementModule } from './store/store-management.module';
     AddressesModule,
     OrdersModule,
     StoreManagementModule,
+    DriverModule,
   ],
   controllers: [AppController],
   providers: [],
