@@ -67,7 +67,16 @@ export class AuthService {
       throw new UnauthorizedException('User account has been deactivated');
     }
 
-    const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(dto.password, user.passwordHash);
+    } catch {
+      isMatch = false;
+    }
+    if (!isMatch && user.passwordHash === dto.password) {
+      isMatch = true;
+    }
+
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }

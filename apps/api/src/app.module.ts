@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { StoresModule } from './stores/stores.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { OrdersModule } from './orders/orders.module';
+import { StoreManagementModule } from './store/store-management.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OrdersModule } from './orders/orders.module';
     StoresModule,
     AddressesModule,
     OrdersModule,
+    StoreManagementModule,
   ],
   controllers: [AppController],
   providers: [],
